@@ -132,7 +132,7 @@ function bindSellingFormEvents(editId) {
       tms_selling_quantity: tmsQty,
       available_quantity: roundNum(availTss + availTms),
       selling_quantity: roundNum(tssQty + tmsQty),
-      amount: Number(document.getElementById('s_amount').value) || 0,
+      amount: ceilMoney(document.getElementById('s_amount').value),
       description: document.getElementById('s_desc').value.trim(),
       remaining_tss_quantity: roundNum(availTss - tssQty),
       remaining_tms_quantity: roundNum(availTms - tmsQty),

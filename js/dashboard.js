@@ -11,16 +11,16 @@ function refreshDashboard() {
 
   const totalPurchaseQty = purchases.reduce((s, r) => s + (Number(r.total_quantity) || Number(r.tss_quantity || 0) + Number(r.tms_quantity || 0)), 0);
   const totalSoldQty     = sellings.reduce((s, r) => s + (Number(r.selling_quantity) || 0), 0);
-  const totalPurchaseAmt = purchases.reduce((s, r) => s + (Number(r.total_amount) || 0), 0);
-  const totalSalesAmt    = sellings.reduce((s, r) => s + (Number(r.amount) || 0), 0);
-  const totalSlnkAmt     = purchases.reduce((s, r) => s + (Number(r.slnk_amount) || 0), 0);
+  const totalPurchaseAmt = ceilMoney(purchases.reduce((s, r) => s + (Number(r.total_amount) || 0), 0));
+  const totalSalesAmt    = ceilMoney(sellings.reduce((s, r) => s + (Number(r.amount) || 0), 0));
+  const totalSlnkAmt     = ceilMoney(purchases.reduce((s, r) => s + (Number(r.slnk_amount) || 0), 0));
 
   // Current stock = total purchased - overall manual sold (TSS + TMS)
   const manual = (typeof getManualSold === 'function') ? getManualSold() : { tss: 0, tms: 0 };
   const currentStock = totalPurchaseQty - (Number(manual.tss) || 0) - (Number(manual.tms) || 0);
 
-  const currentSlnkAmt = totalSlnkAmt - totalSalesAmt;
-  const myKamai        = totalSlnkAmt - totalPurchaseAmt;
+  const currentSlnkAmt = ceilMoney(totalSlnkAmt - totalSalesAmt);
+  const myKamai        = ceilMoney(totalSlnkAmt - totalPurchaseAmt);
 
   document.getElementById('statStock').textContent          = formatQty(currentStock);
   document.getElementById('statPurchaseQty').textContent    = formatQty(totalPurchaseQty);

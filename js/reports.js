@@ -105,22 +105,40 @@ function exportToExcel(sheetsData, filename) {
 }
 
 function purchaseRowsForExcel(records) {
-  return records.map(r => {
+  const rows = records.map(r => {
     const tssRem = r.tss_remaining_quantity ?? (Number(r.tss_quantity || 0) - Number(r.tss_sold_quantity || 0));
     const tmsRem = r.tms_remaining_quantity ?? (Number(r.tms_quantity || 0) - Number(r.tms_sold_quantity || 0));
     return {
       Date: formatDate(r.date),
-      'TSS Purchased': r.tss_quantity, 'TSS Sold': r.tss_sold_quantity || 0, 'TSS Remaining': tssRem, 'TSS Amount': r.tss_amount,
-      'TMS Purchased': r.tms_quantity, 'TMS Sold': r.tms_sold_quantity || 0, 'TMS Remaining': tmsRem, 'TMS Amount': r.tms_amount,
-      'Total Quantity': r.total_quantity, 'Total Amount': r.total_amount, 'SLNK Amount': r.slnk_amount
+      'TSS Purchased': r.tss_quantity, 'TSS Sold': r.tss_sold_quantity || 0, 'TSS Remaining': tssRem, 'TSS Amount': ceilMoney(r.tss_amount),
+      'TMS Purchased': r.tms_quantity, 'TMS Sold': r.tms_sold_quantity || 0, 'TMS Remaining': tmsRem, 'TMS Amount': ceilMoney(r.tms_amount),
+      'Total Quantity': r.total_quantity, 'Total Amount': ceilMoney(r.total_amount), 'SLNK Amount': ceilMoney(r.slnk_amount)
     };
   });
+  if (rows.length) {
+    const sum = (k) => records.reduce((s, r) => s + Number(r[k] || 0), 0);
+    rows.push({
+      Date: 'GRAND TOTAL',
+      'TSS Purchased': sum('tss_quantity'), 'TSS Sold': sum('tss_sold_quantity'), 'TSS Remaining': '', 'TSS Amount': ceilMoney(sum('tss_amount')),
+      'TMS Purchased': sum('tms_quantity'), 'TMS Sold': sum('tms_sold_quantity'), 'TMS Remaining': '', 'TMS Amount': ceilMoney(sum('tms_amount')),
+      'Total Quantity': sum('total_quantity'), 'Total Amount': ceilMoney(sum('total_amount')), 'SLNK Amount': ceilMoney(sum('slnk_amount'))
+    });
+  }
+  return rows;
 }
 function sellingRowsForExcel(records) {
-  return records.map(r => ({
+  const rows = records.map(r => ({
     Date: formatDate(r.date), 'Available Qty': r.available_quantity, 'Selling Qty': r.selling_quantity,
-    Amount: r.amount, Description: r.description, 'Remaining Qty': r.remaining_quantity
+    Amount: ceilMoney(r.amount), Description: r.description, 'Remaining Qty': r.remaining_quantity
   }));
+  if (rows.length) {
+    const sum = (k) => records.reduce((s, r) => s + Number(r[k] || 0), 0);
+    rows.push({
+      Date: 'GRAND TOTAL', 'Available Qty': '', 'Selling Qty': sum('selling_quantity'),
+      Amount: ceilMoney(sum('amount')), Description: '', 'Remaining Qty': ''
+    });
+  }
+  return rows;
 }
 
 function populateSingleEntryDropdown() {
@@ -164,14 +182,20 @@ function handleReportExport(type, format) {
           const { jsPDF } = window.jspdf;
           const doc = new jsPDF();
           addReportHeader(doc, `Monthly Report — ${month}`);
+          const pRows = purchases.map(r => [formatDate(r.date), r.total_quantity, formatCurrency(r.total_amount), formatCurrency(r.slnk_amount)]);
+          const pT = purchases.reduce((a,r)=>({q:a.q+Number(r.total_quantity||0),t:a.t+Number(r.total_amount||0),s:a.s+Number(r.slnk_amount||0)}),{q:0,t:0,s:0});
+          pRows.push(['GRAND TOTAL', pT.q, formatCurrency(pT.t), formatCurrency(pT.s)]);
           doc.autoTable({
             startY: 40, head: [['Purchase Date', 'Total Qty', 'Total Amt', 'SLNK Amt']],
-            body: purchases.map(r => [formatDate(r.date), r.total_quantity, formatCurrency(r.total_amount), formatCurrency(r.slnk_amount)]),
+            body: pRows,
             theme: 'striped', headStyles: { fillColor: [15, 92, 56] }, styles: { fontSize: 8 }
           });
+          const sRows = sellings.map(r => [formatDate(r.date), r.selling_quantity, formatCurrency(r.amount), r.remaining_quantity]);
+          const sT = sellings.reduce((a,r)=>({q:a.q+Number(r.selling_quantity||0),a2:a.a2+Number(r.amount||0)}),{q:0,a2:0});
+          sRows.push(['GRAND TOTAL', sT.q, formatCurrency(sT.a2), '-']);
           doc.autoTable({
             startY: doc.lastAutoTable.finalY + 10, head: [['Selling Date', 'Selling Qty', 'Amount', 'Remaining Qty']],
-            body: sellings.map(r => [formatDate(r.date), r.selling_quantity, formatCurrency(r.amount), r.remaining_quantity]),
+            body: sRows,
             theme: 'striped', headStyles: { fillColor: [15, 92, 56] }, styles: { fontSize: 8 }
           });
           addReportFooter(doc);
@@ -200,16 +224,22 @@ function handleReportExport(type, format) {
           const doc = new jsPDF();
           addReportHeader(doc, 'Complete Business Report');
           doc.setFontSize(11); doc.setTextColor(15, 92, 56); doc.text('Purchase Records', 14, 40);
+          const cpRows = purchases.map(r => [formatDate(r.date), r.total_quantity, formatCurrency(r.total_amount), formatCurrency(r.slnk_amount)]);
+          const cpT = purchases.reduce((a,r)=>({q:a.q+Number(r.total_quantity||0),t:a.t+Number(r.total_amount||0),s:a.s+Number(r.slnk_amount||0)}),{q:0,t:0,s:0});
+          cpRows.push(['GRAND TOTAL', cpT.q, formatCurrency(cpT.t), formatCurrency(cpT.s)]);
           doc.autoTable({
             startY: 44, head: [['Date', 'Total Qty', 'Total Amt', 'SLNK Amt']],
-            body: purchases.map(r => [formatDate(r.date), r.total_quantity, formatCurrency(r.total_amount), formatCurrency(r.slnk_amount)]),
+            body: cpRows,
             theme: 'striped', headStyles: { fillColor: [15, 92, 56] }, styles: { fontSize: 8 }
           });
           const y2 = doc.lastAutoTable.finalY + 12;
           doc.setFontSize(11); doc.setTextColor(15, 92, 56); doc.text('Selling Records', 14, y2);
+          const csRows = sellings.map(r => [formatDate(r.date), r.selling_quantity, formatCurrency(r.amount), r.remaining_quantity]);
+          const csT = sellings.reduce((a,r)=>({q:a.q+Number(r.selling_quantity||0),a2:a.a2+Number(r.amount||0)}),{q:0,a2:0});
+          csRows.push(['GRAND TOTAL', csT.q, formatCurrency(csT.a2), '-']);
           doc.autoTable({
             startY: y2 + 4, head: [['Date', 'Selling Qty', 'Amount', 'Remaining Qty']],
-            body: sellings.map(r => [formatDate(r.date), r.selling_quantity, formatCurrency(r.amount), r.remaining_quantity]),
+            body: csRows,
             theme: 'striped', headStyles: { fillColor: [15, 92, 56] }, styles: { fontSize: 8 }
           });
           addReportFooter(doc);

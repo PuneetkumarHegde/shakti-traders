@@ -36,15 +36,15 @@ function setManualSold(partial) {
 
 function calcPurchase({ tss_quantity, tss_amount, tms_quantity, tms_amount }) {
   const tssQ = Number(tss_quantity) || 0;
-  const tssA = Number(tss_amount) || 0;
+  const tssA = ceilMoney(tss_amount);
   const tmsQ = Number(tms_quantity) || 0;
-  const tmsA = Number(tms_amount) || 0;
+  const tmsA = ceilMoney(tms_amount);
 
   const total_quantity = roundNum(tssQ + tmsQ);
-  const total_amount   = roundNum(tssA + tmsA);
+  const total_amount   = ceilMoney(tssA + tmsA);
 
   const slnk_quantity = total_quantity;
-  const slnk_amount   = roundNum(total_amount + (total_quantity * 4));
+  const slnk_amount   = ceilMoney(total_amount + (total_quantity * 4));
 
   return { total_quantity, total_amount, slnk_quantity, slnk_amount };
 }
@@ -106,9 +106,9 @@ function bindPurchaseFormEvents(editId) {
     const base = {
       date: document.getElementById('p_date').value,
       tss_quantity: Number(document.getElementById('p_tssq').value) || 0,
-      tss_amount:   Number(document.getElementById('p_tssa').value) || 0,
+      tss_amount:   ceilMoney(document.getElementById('p_tssa').value),
       tms_quantity: Number(document.getElementById('p_tmsq').value) || 0,
-      tms_amount:   Number(document.getElementById('p_tmsa').value) || 0,
+      tms_amount:   ceilMoney(document.getElementById('p_tmsa').value),
       // legacy fields kept zero so downstream code stays compatible
       tss_sold_quantity: 0,
       tms_sold_quantity: 0
@@ -180,17 +180,17 @@ function getFilteredPurchases() {
 function renderPurchaseSummary() {
   const all = DB.getAll('purchase');
   const tssQty = all.reduce((s, r) => s + (Number(r.tss_quantity) || 0), 0);
-  const tssAmt = all.reduce((s, r) => s + (Number(r.tss_amount)   || 0), 0);
+  const tssAmt = ceilMoney(all.reduce((s, r) => s + (Number(r.tss_amount)   || 0), 0));
   const tmsQty = all.reduce((s, r) => s + (Number(r.tms_quantity) || 0), 0);
-  const tmsAmt = all.reduce((s, r) => s + (Number(r.tms_amount)   || 0), 0);
+  const tmsAmt = ceilMoney(all.reduce((s, r) => s + (Number(r.tms_amount)   || 0), 0));
 
   const manual = getManualSold();
   const tssRemaining = roundNum(tssQty - manual.tss);
   const tmsRemaining = roundNum(tmsQty - manual.tms);
 
-  const totalAmt = roundNum(tssAmt + tmsAmt);
+  const totalAmt = ceilMoney(tssAmt + tmsAmt);
   const totalQty = roundNum(tssQty + tmsQty);
-  const slnkAmt  = roundNum(totalAmt + (totalQty * 4));
+  const slnkAmt  = ceilMoney(totalAmt + (totalQty * 4));
 
   document.getElementById('sumTssQty').textContent       = formatQty(tssQty) + ' kg';
   document.getElementById('sumTmsQty').textContent       = formatQty(tmsQty) + ' kg';

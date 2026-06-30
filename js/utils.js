@@ -15,6 +15,10 @@ function showLoading(show) {
   document.getElementById('loadingOverlay').classList.toggle('hidden', !show);
 }
 
+function ceilMoney(n) {
+  return Math.ceil(Number(n) || 0);
+}
+
 function roundNum(n, decimals = 2) {
   const num = Number(n) || 0;
   const factor = Math.pow(10, decimals);
@@ -22,8 +26,8 @@ function roundNum(n, decimals = 2) {
 }
 
 function formatCurrency(n) {
-  const num = roundNum(n, 2);
-  return '₹' + num.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+  const num = ceilMoney(n);
+  return '₹' + num.toLocaleString('en-IN', { maximumFractionDigits: 0 });
 }
 
 function formatQty(n) {
