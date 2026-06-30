@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shakti Traders</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+
+<!-- ===================== LOGIN VIEW ===================== -->
+<section id="loginView" class="login-view">
+  <div class="login-card">
+    <div class="brand">
+      <div class="brand-mark">ST</div>
+      <h1>Shakti Traders</h1>
+      <p>Purchase &amp; Selling Management</p>
+    </div>
+    <form id="loginForm" autocomplete="off">
+      <label>Username
+        <input type="text" id="loginUser" placeholder="Enter username" required>
+      </label>
+      <label>Password
+        <input type="password" id="loginPass" placeholder="Enter password" required>
+      </label>
+      <p id="loginError" class="error-text"></p>
+      <button type="submit" class="btn btn-primary btn-block">Login</button>
+    </form>
+  </div>
+</section>
+
+<!-- ===================== APP VIEW ===================== -->
+<div id="appView" class="app-shell hidden">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-mark small">ST</div>
+      <span>Shakti Traders</span>
+    </div>
+    <nav class="sidebar-nav">
+      <button class="nav-item active" data-view="dashboard">📊 Dashboard</button>
+      <button class="nav-item" data-view="purchase">🛒 Purchase</button>
+      <button class="nav-item" data-view="selling">💰 Selling</button>
+      <button class="nav-item" data-view="reports">📑 Reports</button>
+      <button class="nav-item" data-view="backup">💾 Backup</button>
+    </nav>
+    <button id="logoutBtn" class="nav-item logout">↩ Logout</button>
+  </aside>
+
+  <!-- Mobile top bar -->
+  <header class="topbar">
+    <button id="menuToggle" class="icon-btn">☰</button>
+    <span class="topbar-title">Shakti Traders</span>
+  </header>
+
+  <main class="content">
+
+    <!-- DASHBOARD -->
+    <section id="view-dashboard" class="view active">
+      <div class="view-header">
+        <h2>Dashboard</h2>
+        <p>Overview of your business at a glance</p>
+      </div>
+
+      <div class="card-grid">
+        <div class="stat-card">
+          <span class="stat-label">Current Stock</span>
+          <span class="stat-value" id="statStock">0</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Total Purchased Qty</span>
+          <span class="stat-value" id="statPurchaseQty">0</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Total Sold Qty</span>
+          <span class="stat-value" id="statSoldQty">0</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Total Purchase Amount</span>
+          <span class="stat-value" id="statPurchaseAmt">₹0</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Total Sales Amount</span>
+          <span class="stat-value" id="statSalesAmt">₹0</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Total SLNK Amount</span>
+          <span class="stat-value" id="statSlnkAmt">₹0</span>
+        </div>
+        <div class="stat-card highlight">
+          <span class="stat-label">Current SLNK Amount</span>
+          <span class="stat-value" id="statCurrentSlnkAmt">₹0</span>
+        </div>
+        <div class="stat-card highlight">
+          <span class="stat-label">My Kamai</span>
+          <span class="stat-value" id="statMyKamai">₹0</span>
+        </div>
+      </div>
+
+      <div class="view-header" style="margin-top:32px;">
+        <h2 style="font-size:18px;">Quick Actions</h2>
+      </div>
+      <div class="quick-actions">
+        <button class="quick-card" data-view="purchase">🛒<span>Purchase</span></button>
+        <button class="quick-card" data-view="selling">💰<span>Selling</span></button>
+        <button class="quick-card" data-view="reports">📑<span>Reports</span></button>
+        <button class="quick-card" data-view="backup">💾<span>Backup</span></button>
+        <button class="quick-card" id="quickLogout">↩<span>Logout</span></button>
+      </div>
+    </section>
+
+    <!-- PURCHASE -->
+    <section id="view-purchase" class="view">
+      <div class="view-header">
+        <h2>Purchase</h2>
+        <p>Record and manage purchase entries</p>
+      </div>
+
+      <div class="toolbar" style="margin-top:18px;">
+        <button class="btn btn-primary" id="addPurchaseBtn">+ Add Purchase</button>
+        <input type="text" id="purchaseSearch" class="input" placeholder="Search by date or amount...">
+        <input type="date" id="purchaseFilterDate" class="input">
+        <input type="month" id="purchaseFilterMonth" class="input">
+        <button class="btn btn-ghost" id="purchaseClearFilters">Clear</button>
+      </div>
+
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>TSS Quantity (kg)</th>
+              <th>TSS Amount (₹)</th>
+              <th>TMS Quantity (kg)</th>
+              <th>TMS Amount (₹)</th>
+              <th>Total Amount (₹)</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="purchaseTableBody"></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="purchasePagination"></div>
+
+      <div class="card-grid" id="purchaseSummary" style="margin-top:18px;">
+        <div class="stat-card stacked">
+          <span class="stat-label">🌾 TSS SUMMARY</span>
+          <div class="stacked-row"><span>Total Purchased Quantity</span><strong id="sumTssQty">0 kg</strong></div>
+          <div class="stacked-row"><span>Total Sold Quantity (manual)</span><input type="number" step="any" min="0" id="sumTssSoldInput" class="input" style="max-width:120px;text-align:right" placeholder="0"></div>
+          <div class="stacked-row divider"><span>Remaining Quantity</span><strong class="accent" id="sumTssRemaining">0 kg</strong></div>
+        </div>
+        <div class="stat-card stacked">
+          <span class="stat-label">🌾 TMS SUMMARY</span>
+          <div class="stacked-row"><span>Total Purchased Quantity</span><strong id="sumTmsQty">0 kg</strong></div>
+          <div class="stacked-row"><span>Total Sold Quantity (manual)</span><input type="number" step="any" min="0" id="sumTmsSoldInput" class="input" style="max-width:120px;text-align:right" placeholder="0"></div>
+          <div class="stacked-row divider"><span>Remaining Quantity</span><strong class="accent" id="sumTmsRemaining">0 kg</strong></div>
+        </div>
+        <div class="stat-card stacked">
+          <span class="stat-label">₹ FINANCIAL SUMMARY</span>
+          <div class="stacked-row"><span>Total Purchase Amount</span><strong id="sumTotalAmt">₹0</strong></div>
+          <div class="stacked-row divider"><span>SLNK Amount</span><strong class="accent" id="sumSlnkAmt">₹0</strong></div>
+        </div>
+      </div>
+      <p class="hint-note">ⓘ SLNK Amount = Total Purchase Amount + (Total Purchased Quantity × ₹4)</p>
+    </section>
+
+    <!-- SELLING -->
+    <section id="view-selling" class="view">
+      <div class="view-header">
+        <h2>Selling</h2>
+        <p>Record and manage selling entries</p>
+      </div>
+
+      <div class="toolbar">
+        <button class="btn btn-primary" id="addSellingBtn">+ Add Sale</button>
+        <input type="text" id="sellingSearch" class="input" placeholder="Search by date or description...">
+        <input type="date" id="sellingFilterDate" class="input">
+        <input type="month" id="sellingFilterMonth" class="input">
+        <button class="btn btn-ghost" id="sellingClearFilters">Clear</button>
+      </div>
+
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Date</th><th>Avail TSS</th><th>Sold TSS</th><th>Avail TMS</th><th>Sold TMS</th>
+              <th>Amount</th><th>Description</th><th>Remaining (TSS/TMS)</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="sellingTableBody"></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="sellingPagination"></div>
+    </section>
+
+    <!-- REPORTS -->
+    <section id="view-reports" class="view">
+      <div class="view-header">
+        <h2>Reports</h2>
+        <p>Generate and export professional reports</p>
+      </div>
+
+      <div class="report-grid">
+        <div class="report-card">
+          <h3>Purchase Report</h3>
+          <p>All purchase entries with totals</p>
+          <div class="report-actions">
+            <button class="btn btn-outline" data-report="purchase" data-format="pdf">Export PDF</button>
+            <button class="btn btn-outline" data-report="purchase" data-format="excel">Export Excel</button>
+          </div>
+        </div>
+        <div class="report-card">
+          <h3>Selling Report</h3>
+          <p>All selling entries with totals</p>
+          <div class="report-actions">
+            <button class="btn btn-outline" data-report="selling" data-format="pdf">Export PDF</button>
+            <button class="btn btn-outline" data-report="selling" data-format="excel">Export Excel</button>
+          </div>
+        </div>
+        <div class="report-card">
+          <h3>Monthly Report</h3>
+          <p>Pick a month to generate combined report</p>
+          <input type="month" id="monthlyReportMonth" class="input" style="margin-bottom:10px;">
+          <div class="report-actions">
+            <button class="btn btn-outline" data-report="monthly" data-format="pdf">Export PDF</button>
+            <button class="btn btn-outline" data-report="monthly" data-format="excel">Export Excel</button>
+          </div>
+        </div>
+        <div class="report-card">
+          <h3>Single Entry Report</h3>
+          <p>Select entry type and ID</p>
+          <select id="singleEntryType" class="input" style="margin-bottom:10px;">
+            <option value="purchase">Purchase Entry</option>
+            <option value="selling">Selling Entry</option>
+          </select>
+          <select id="singleEntryId" class="input" style="margin-bottom:10px;"></select>
+          <div class="report-actions">
+            <button class="btn btn-outline" data-report="single" data-format="pdf">Export PDF</button>
+          </div>
+        </div>
+        <div class="report-card">
+          <h3>Complete Report</h3>
+          <p>Full purchase + selling summary</p>
+          <div class="report-actions">
+            <button class="btn btn-outline" data-report="complete" data-format="pdf">Export PDF</button>
+            <button class="btn btn-outline" data-report="complete" data-format="excel">Export Excel</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- BACKUP -->
+    <section id="view-backup" class="view">
+      <div class="view-header">
+        <h2>Backup</h2>
+        <p>Your data auto-saves to this browser. Use the options below for extra safety or moving to another device.</p>
+      </div>
+
+      <div class="report-grid">
+        <div class="report-card">
+          <h3>🔄 Auto-save status</h3>
+          <p id="autoSaveStatus">All data is automatically saved in this browser's local storage after every change.</p>
+        </div>
+        <div class="report-card">
+          <h3>⬇ Backup to Device</h3>
+          <p>Download a full backup file (.json) of all purchase and selling records.</p>
+          <div class="report-actions">
+            <button class="btn btn-primary" id="exportBackupBtn">Download Backup</button>
+          </div>
+        </div>
+        <div class="report-card">
+          <h3>⬆ Restore from Device</h3>
+          <p>Restore data from a previously downloaded backup file. This will replace current data.</p>
+          <input type="file" id="restoreFileInput" accept="application/json" class="input" style="margin-bottom:10px;">
+          <div class="report-actions">
+            <button class="btn btn-outline" id="restoreBackupBtn">Restore Backup</button>
+          </div>
+        </div>
+        <div class="report-card">
+          <h3>📦 Export Purchase Report</h3>
+          <p>Quick backup of purchase records only</p>
+          <div class="report-actions">
+            <button class="btn btn-outline" id="backupPurchaseBtn">Export JSON</button>
+          </div>
+        </div>
+        <div class="report-card">
+          <h3>📦 Export Selling Report</h3>
+          <p>Quick backup of selling records only</p>
+          <div class="report-actions">
+            <button class="btn btn-outline" id="backupSellingBtn">Export JSON</button>
+          </div>
+        </div>
+        <div class="report-card danger">
+          <h3>⚠ Clear All Data</h3>
+          <p>Permanently erase all records from this browser. Cannot be undone.</p>
+          <div class="report-actions">
+            <button class="btn btn-danger" id="clearAllBtn">Clear All Data</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ===================== MODALS ===================== -->
+<div id="modalOverlay" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="modalTitle">Add Entry</h3>
+      <button class="icon-btn" id="modalClose">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<div id="confirmOverlay" class="modal-overlay hidden">
+  <div class="modal modal-sm">
+    <div class="modal-head">
+      <h3>Confirm</h3>
+    </div>
+    <div class="modal-body">
+      <p id="confirmText">Are you sure?</p>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" id="confirmCancel">Cancel</button>
+        <button class="btn btn-danger" id="confirmOk">Delete</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toastBox" class="toast-box"></div>
+<div id="loadingOverlay" class="loading-overlay hidden"><div class="spinner"></div></div>
+
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/purchase.js"></script>
+<script src="js/selling.js"></script>
+<script src="js/dashboard.js"></script>
+<script src="js/reports.js"></script>
+<script src="js/backup.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

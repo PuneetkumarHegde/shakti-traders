@@ -1,0 +1,7 @@
+{
+  "version": 2,
+  "name": "shakti-traders",
+  "builds": [
+    { "src": "**/*", "use": "@vercel/static" }
+  ]
+}
